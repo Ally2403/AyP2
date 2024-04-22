@@ -17,7 +17,8 @@ int xpos1 = 0, ypos1 = 0, colision = 3, i, vidax;
   float yspeed = 0, gravity = 1;
   boolean derecha = false, abajo = false, izquierda = false, arriba = false, saltando = false;
 //granada
-  float x1 = xpos1 + 1500, y1 = yinicial; // Posición de la bola
+  float posinicialx;
+  float x1 = posinicialx, y1 = yinicial, posx; // Posición de la bola
   float vx, vy; // Velocidades en x e y
   float g = 0.5; // Gravedad
   float r = 20;
@@ -65,7 +66,7 @@ void setup(){
   sw.start();
   
   //CONFIGURACIONES GRANADA
-  lanzarBolita();
+  lanzarBolita1();
 }
 
 void draw(){
@@ -85,7 +86,7 @@ void draw(){
          image(latino3, xpos, ypos);
       }
     }
-    MoveHelicoptero();
+    MoveHelicoptero1();
     movelatino();
     movemapa();
     time();
@@ -111,9 +112,18 @@ void reset(){
   sw.restart();
 }
 
-void moveGranada(){
-  
-  image(granada, x1, y1, r*3, r*3);
+void lanzarBolita1(){
+  lanzarBolita(1500);
+}
+
+void MoveHelicoptero1(){
+  MoveHelicoptero(1500);
+}
+
+void moveGranada(){ 
+  posx = xpos1 + x1;
+  image(granada, xpos1 + x1, y1, r*3, r*3);
+  colisiongranada();
   if (enMovimiento) {
     x1 += vx;
     y1 += vy;
@@ -130,7 +140,6 @@ void moveGranada(){
       // Si la velocidad horizontal es muy baja, detiene la bola
       if (abs(vx) < 0.1) {
         enMovimiento = false;
-        x1 = xpos1-100;
         // Actualiza el tiempo anterior y el tiempo de espera
         tiempoAnterior = millis();
         tiempoEspera = int(random(1000, 4000)); // Tiempo de espera aleatorio entre 1 y 5 segundos
@@ -139,12 +148,12 @@ void moveGranada(){
   }
   // Verifica si ha pasado el tiempo de espera y lanza la bola nuevamente
   if (!enMovimiento && millis() - tiempoAnterior >= tiempoEspera) {
-    lanzarBolita();
+    lanzarBolita1();
   }
 }
 
 // Función para lanzar la bolita
-void lanzarBolita() {
+void lanzarBolita(int posinicialx) {
   // Genera un número aleatorio que determina la dirección del lanzamiento (-1 para izquierda, 1 para derecha)
   float direccion = random(-1, 1);
   
@@ -155,21 +164,44 @@ void lanzarBolita() {
   vy = random(-10, -20); // Velocidad aleatoria entre -10 y -20
   
   // Reinicia la posición de la bola
-  x1 = xpos1 + 1500;
+  x1 = posinicialx;
   y1 = yinicial;
   
   // Reinicia la variable de control de movimiento
   enMovimiento = true;
+  
 }
 
-void MoveHelicoptero(){
+void colisiongranada(){
+  if(xpos + latinox >= posx &&
+   xpos <= posx + r*3 &&
+   ypos + latinoy >= y1 &&
+   ypos <= y1 + r*3){
+     saltar();
+     if(derecha){
+      xpos = xpos - 150;      
+     }
+     if(izquierda){
+      xpos = xpos + 150;
+     }
+     colision = colision - 1;
+     fill(255, 0, 0);
+     textSize(20);
+     textAlign(CENTER);
+     text("¡Colisión detectada!", 100, 100, 780, 100);
+     x1 = posinicialx;
+     y1 = yinicial;
+     }
+}
+
+void MoveHelicoptero(int posinicialx){
   // Actualizar la posición vertical
   yinicial = yinicial + velheli;
   // Cambiar la dirección si alcanza los límites superior o inferior
   if(yinicial > alturamax || yinicial < 0){
     velheli = -velheli;
   }
-  image(helicoptero, xpos1 + 1500, yinicial);
+  image(helicoptero, xpos1 + posinicialx, yinicial);
 }
 
 void plataformas1(){
@@ -191,6 +223,7 @@ void plataformas(int xposplat, int yposplat, int platx, int platy){
 void obstaculos1(){
   obstaculos(xpos1+1200, 550, 130, 100);
   obstaculos(xpos1+2850, 520, 100, 130);
+  
 }
 
 void obstaculos(int xposobjeto1, int yposobjeto1, int objetox1, int objetoy1){
