@@ -1,10 +1,14 @@
-PImage fondo, mapa, vida1, helicoptero, restart1, latino3, granada;
+PImage fondo, mapa, vida1, helicoptero, restart1, latino3, granada, pausa1, dollar, desaparecer;
 PFont font;
 import gifAnimation.*;
-int xpos = 0, ypos = 482, speed = 7, latinox, latinoy;
-int xpos1 = 0, ypos1 = 0, colision = 3, i, vidax;
+import processing.sound.*;
+//Variables personaje y fondo
+  int xpos = 0, ypos = 482, speed = 7, latinox, latinoy;
+  int xpos1 = 0, ypos1 = 0, colision = 3, i, vidax;
+  boolean derecha = false, abajo = false, izquierda = false, arriba = false, saltando = false;
 //colisiones
-  int xposobjeto1, yposobjeto1, objetox1, objetoy1;
+  int yposobjeto1, objetox1, objetoy1;
+  float xposobjeto1;
 //boton restart
   int x = 630; // Coordenada x del botón
   int y = 515; // Coordenada y del botón
@@ -15,7 +19,6 @@ int xpos1 = 0, ypos1 = 0, colision = 3, i, vidax;
 //falta agregar helicoptero en el reset
   int yinicial = 600/2, velheli = 2, alturamax = 470;
   float yspeed = 0, gravity = 1;
-  boolean derecha = false, abajo = false, izquierda = false, arriba = false, saltando = false;
 //granada
   float posinicialx;
   float x1 = posinicialx, y1 = yinicial, posx; // Posición de la bola
@@ -26,9 +29,34 @@ int xpos1 = 0, ypos1 = 0, colision = 3, i, vidax;
   boolean enMovimiento; // Variable para controlar si la bola está en movimiento
   int tiempoAnterior = millis(); // Variable para almacenar el tiempo en que se lanzó la bola anteriormente
   int tiempoEspera = int(random(1000, 5000)); // Tiempo de espera antes de lanzar la bola nuevamente
+//enemigos
+  float posX, speed1 = 2;
+  int leftLimit, rightLimit, posY, tamx, tamy;
+  boolean right, left = true;
+//pausa
+  boolean pausa;
+//vulnerabilidad de colision
+  boolean invulnerable = false;
+  int tiempoInvulnerable = 2000; // Duración de la invulnerabilidad en milisegundos
+  int tiempoColision = 0; // Variable para almacenar el tiempo en que ocurrió la última colisión
+//Volumen y barra deslizadora
+  float volume = 0.1;
+  float sliderX = 680;
+  float sliderY = 200;
+  float sliderWidth = 200;
+  float sliderHeight = 50;
+  boolean dragging = false;
+//billetes
+  int dollars = 0;
+  // Arreglo para almacenar la posición de los dolares
+  int[] dollarPositionsX = new int[10]; 
+  int[] dollarPositionsY = new int[10];
+  int num;
+  
 
-Gif latino, latino1;
+Gif latino, latino1, imgLeft, imgRight;
 Timer sw;
+SoundFile music;
 
 
 void setup(){
@@ -48,6 +76,12 @@ void setup(){
   latino3 = loadImage("latino6.png");
   granada = loadImage("granada.png");
   granada.resize(100,110);
+  pausa1 = loadImage("pausa.png");
+  pausa1.resize(470, 306);
+  dollar = loadImage("dollar.png");
+  dollar.resize(80,70);
+  desaparecer = loadImage("desaparecer.png");
+  desaparecer.resize(80,70);
   
   //CONFIGURACIONES DEL PERSONAJE
   latino = new Gif(this, "latino5.gif");
@@ -67,16 +101,39 @@ void setup(){
   
   //CONFIGURACIONES GRANADA
   lanzarBolita1();
+  
+  //CONFIGURACIONES ENEMIGOS
+  imgLeft = new Gif(this, "latino5.gif");
+  imgLeft.play();
+  imgRight = new Gif(this, "latino4.gif");
+  imgRight.play();
+  posX = leftLimit;
+  tamy = imgLeft.height;
+  tamx = imgLeft.width;
+  
+  //CONFIGURACIONES DEL VOLUMEN
+  music = new SoundFile(this, "Cancion Juego.mp3");
+  music.loop();
+  music.amp(volume);
+  
+  //CONFIGURACIONES BILLETES
+  dollarPositionsX[1]=500;
+  dollarPositionsY[1]=500;
+  dollarPositionsX[2]=900;
+  dollarPositionsY[2]=500;
 }
 
 void draw(){
-  if(colision == 0){
+  if(pausa == true){
+     volumen();
+  }else if(colision == 0){
     botonrestart();
   }else{
     background(0);
     image(fondo, 0, 0);
     image(mapa, xpos1, ypos1);
     obstaculos1();
+    billetes1();
     if(derecha){
       image(latino, xpos, ypos); 
     }else{
@@ -92,6 +149,11 @@ void draw(){
     time();
     vidas();
     moveGranada();
+    enemigos1();
+    // Verifica si el personaje está invulnerable y si ha pasado suficiente tiempo desde la última colisión
+    if (invulnerable && millis() - tiempoColision >= tiempoInvulnerable) {
+      invulnerable = false; // Termina la invulnerabilidad después del tiempo especificado
+    }
   }
 }
 
@@ -112,12 +174,97 @@ void reset(){
   sw.restart();
 }
 
+void billetes1(){
+  billetes(1);
+  billetes(2);
+  
+}
+
+void billetes(int num){
+  image(dollar,xpos1 + dollarPositionsX[num], dollarPositionsY[num]);
+  if (xpos >= xpos1 + dollarPositionsX[num] && xpos <= xpos1 + dollarPositionsX[num] + 90 && ypos == dollarPositionsY[num]) {
+      if (keyCode == UP) {
+        System.out.print("hola");
+        dollarPositionsX[num] = -100; // Mover el cuadrado fuera de la pantalla
+        dollars++; // Incrementar el contador
+      }
+    }
+    textAlign(CENTER);
+    textSize(40);
+    fill(255);
+    text("billetes "+dollars, 780, 150);
+}
+
+void volumen(){
+  // Calcular el porcentaje de volumen
+  int percent = int(volume * 100);
+  
+  // Dibujar la barra de volumen
+  fill(#694433); // Antes de la barra (rojo)
+  rect(sliderX, sliderY, volume * sliderWidth, sliderHeight);
+  
+  //volume * sliderWidth es el ancho de la barra
+  
+  fill(#FFDE00); // Después de la barra (verde)
+  rect(sliderX + volume * sliderWidth, sliderY, (1 - volume) * sliderWidth, sliderHeight);
+  
+  // Dibujar el texto del porcentaje de volumen
+  fill(255);
+  textAlign(CENTER, CENTER);
+  text(percent + "%", sliderX + sliderWidth / 2, sliderY + sliderHeight / 2);
+  
+  // Dibujar el control deslizante
+  fill(255);
+  rect(constrain(sliderX + volume * sliderWidth - 5, sliderX, sliderX + sliderWidth - 5), sliderY, 5, sliderHeight);
+
+  textAlign(CENTER);
+  textSize(40);
+  fill(255);
+  text("Volume", 780, 150);
+}
+
+void enemigos1(){
+  enemigos(2905, 4750, 470-imgLeft.height);
+  
+}
+
+void enemigos(int leftLimit, int rightLimit, int posY){
+  // Actualizar la posición x
+  posX += speed1;
+  
+  // Verificar los límites
+  if (posX >= rightLimit || posX <= leftLimit) {
+    // Cambiar la imagen y la dirección de movimiento
+    if (posX >= rightLimit) {
+      posX = rightLimit;
+      image(imgRight, xpos1 + posX, ypos);
+      right = true;
+      left = false;
+    } else if(posX <= leftLimit){
+      posX = leftLimit;
+      image(imgLeft, posX, ypos);
+      right = false;
+      left = true;
+    }
+    speed1 *= -1; // Cambiar la dirección de movimiento
+  } else {
+     //Dibujar la imagen en su posición actual
+     if(left){
+        image(imgLeft, xpos1 + posX, posY);
+     }else if (right){
+        image(imgRight, xpos1 + posX, posY);  
+     }
+  }
+  //Colisión
+  obstaculos(xpos1 + posX, posY, tamx, tamy);
+}
+
 void lanzarBolita1(){
-  lanzarBolita(1500);
+  lanzarBolita(1700+200);
 }
 
 void MoveHelicoptero1(){
-  MoveHelicoptero(1500);
+  MoveHelicoptero(1700);
 }
 
 void moveGranada(){ 
@@ -173,25 +320,30 @@ void lanzarBolita(int posinicialx) {
 }
 
 void colisiongranada(){
-  if(xpos + latinox >= posx &&
-   xpos <= posx + r*3 &&
-   ypos + latinoy >= y1 &&
-   ypos <= y1 + r*3){
-     saltar();
-     if(derecha){
-      xpos = xpos - 150;      
-     }
-     if(izquierda){
-      xpos = xpos + 150;
-     }
-     colision = colision - 1;
-     fill(255, 0, 0);
-     textSize(20);
-     textAlign(CENTER);
-     text("¡Colisión detectada!", 100, 100, 780, 100);
-     x1 = posinicialx;
-     y1 = yinicial;
-     }
+  if(!invulnerable){
+    if(xpos + latinox >= posx &&
+     xpos <= posx + r*3 &&
+     ypos + latinoy >= y1 &&
+     ypos <= y1 + r*3){
+       saltar();
+       if(derecha){
+        xpos = xpos - 150;      
+       }
+       if(izquierda){
+        xpos = xpos + 150;
+       }
+       colision = colision - 1;
+       fill(255, 0, 0);
+       textSize(20);
+       textAlign(CENTER);
+       text("¡Colisión detectada!", 100, 100, 780, 100);
+       x1 = posinicialx;
+       y1 = yinicial;
+       
+       invulnerable = true; // Activar la invulnerabilidad
+       tiempoColision = millis(); // Actualizar el tiempo de la última colisión
+       }
+   }
 }
 
 void MoveHelicoptero(int posinicialx){
@@ -206,7 +358,7 @@ void MoveHelicoptero(int posinicialx){
 
 void plataformas1(){
   plataformas(xpos1 + 2905, 470, 1950, 180);
-  //plataformas(xpos1 + 2680, 470, 250, 10);
+  
 }
 
 void plataformas(int xposplat, int yposplat, int platx, int platy){
@@ -226,27 +378,30 @@ void obstaculos1(){
   
 }
 
-void obstaculos(int xposobjeto1, int yposobjeto1, int objetox1, int objetoy1){
+void obstaculos(float xposobjeto1, int yposobjeto1, int objetox1, int objetoy1){
   //noFill();
   //noStroke();
-  rect(xposobjeto1, yposobjeto1, objetox1, objetoy1);
-  if(xpos + latinox >= xposobjeto1 &&
-  xpos <= xposobjeto1 + objetox1 &&
-  ypos + latinoy >= yposobjeto1 &&
-  ypos <= yposobjeto1 + objetoy1){
-    saltar();
-    if(derecha){
-    xpos = xpos - 150;      
+  if(!invulnerable){
+    rect(xposobjeto1, yposobjeto1, objetox1, objetoy1);
+    if(xpos + latinox >= xposobjeto1 &&
+    xpos <= xposobjeto1 + objetox1 &&
+    ypos + latinoy >= yposobjeto1 &&
+    ypos <= yposobjeto1 + objetoy1){
+      saltar();
+      if(derecha){
+      xpos = xpos - 150;      
+      }
+      if(izquierda){
+      xpos = xpos + 150;
+      }
+      colision = colision - 1;
+      fill(255, 0, 0);
+      textSize(20);
+      textAlign(CENTER);
+      text("¡Colisión detectada!", 100, 100, 780, 100);
+      invulnerable = true; // Activar la invulnerabilidad
+      tiempoColision = millis(); // Actualizar el tiempo de la última colisión
     }
-    if(izquierda){
-    xpos = xpos + 150;
-    }
-    colision = colision - 1;
-    fill(255, 0, 0);
-    textSize(20);
-    textAlign(CENTER);
-    text("¡Colisión detectada!", 100, 100, 780, 100);
-    // Aquí puedes agregar acciones adicionales cuando haya colisión
   }
 }
 
@@ -262,21 +417,23 @@ void movemapa(){
   if(derecha){
     xpos1 = xpos1 - speed;
   }
-  if(izquierda){
+  if(izquierda && xpos1 != 0){
     xpos1 = xpos1 + speed;
   }
 }
 
 void movelatino(){
-  if (derecha){
-    xpos = xpos + speed;
-  }
-  if(izquierda){
-    xpos = xpos - speed;
-  }
-  if (abajo){
-    ypos = ypos + speed;
-  }
+  
+      if (derecha){
+        xpos = xpos + speed;
+      }
+      if(izquierda){
+        xpos = xpos - speed;
+      }
+      if (abajo){
+        ypos = ypos + speed;
+      }
+  
   gravedad();
   plataformas1();
   
@@ -303,7 +460,7 @@ void gravedad(){
 }
 
 void saltar(){
-  yspeed = -21;
+  yspeed = -25;
   saltando = true;
 }
 
@@ -315,39 +472,67 @@ void botonrestart(){
 }
 
 class Timer {
-  int startTime = 0, stopTime = 0;
+  int startTime = 0, pauseTime = 0, totalPausedTime = 0;
   boolean running = false; 
+  boolean paused = false;
+  
   void start() {
-    startTime = millis();
-    running = true;
+    if(!running){
+      startTime = millis() - totalPausedTime;
+      running = true;
+      paused = false;
+    }
   }
   void stop() {
-    stopTime = millis();
     running = false;
+    paused = false;
   }
+  
+  void pause() {
+    if (running && !paused) {
+      pauseTime = millis();
+      paused = true;
+    }
+  }
+  
+  void resume() {
+    if (running && paused) {
+      totalPausedTime += millis() - pauseTime;
+      paused = false;
+    }
+  }
+  
   void restart() {
     startTime = millis();
-    stopTime = 0;
+    totalPausedTime = 0;
     running = true;
+    paused = false;
   }
   int getElapsedTime() {
     int elapsed;
     if (running) {
-      elapsed = (millis() - startTime);
+      if (paused) {
+        elapsed = pauseTime - startTime - totalPausedTime;
+      } else {
+        elapsed = millis() - startTime - totalPausedTime;
+      }
     }
     else {
-      elapsed = (stopTime - startTime);
+      elapsed = 0;
     }
     return elapsed;
   }
+
   int milisecond() {
     return (getElapsedTime() / 10) % 100;
   }
+
   int second() {
     return (getElapsedTime() / 1000) % 60;
   }
+
   int minute() {
-    return (getElapsedTime() / (1000*60)) % 60;
+    return (getElapsedTime() / (1000 * 60)) % 60;
   }
 }
 
@@ -363,6 +548,32 @@ void mouseClicked(){
   if (mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h && colision == 0) {
     reset();
   }
+  //cuadrado de continuar en menu de pausa;
+  if (mouseX > 555 && mouseX < 555 + 470 && mouseY > 396 && mouseY < 396 + 99 && pausa == true) {
+    pausa = false;
+    sw.resume();
+  }
+}
+
+void mousePressed() {
+  // Verificar si el mouse está sobre el control deslizante del volumen
+  if (mouseX > sliderX && mouseX < sliderX + sliderWidth && mouseY > sliderY && mouseY < sliderY + sliderHeight) {
+    dragging = true;
+  }
+}
+
+void mouseReleased() {
+  //volumen
+  dragging = false;
+}
+
+void mouseDragged() {
+  //volumen
+  if (dragging) {
+    volume = constrain((mouseX - sliderX) / sliderWidth, 0, 1);
+    music.amp(volume);
+    //amp controla valores de 0 siendo silencio y 1 siendo max
+  }
 }
 
 void keyPressed(){
@@ -377,6 +588,19 @@ void keyPressed(){
   if(key == ' ' && !saltando){
     saltar();
   }
+  if(keyCode == TAB){
+    pausa = true;
+    image(fondo, 0, 0);
+    image(pausa1, 555, 297);
+    //settings
+    noFill();
+    noStroke();
+    rect(555, 297, 470, 99);
+    //continue
+    rect(555, 396, 470, 99);
+    sw.pause();
+  }
+  
 }
 
 void keyReleased (){
