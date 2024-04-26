@@ -1,4 +1,4 @@
- //<>// //<>//
+
 class enemigos {
   float posX;
   int posY;
