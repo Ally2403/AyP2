@@ -1,8 +1,4 @@
 
-/*void lanzarBolita1() {
-  lanzarBolita(1700+200);
-}*/
-
 class granada {
   float posinicialx;
   float x1 = posinicialx, y1 = yinicial, posx; // Posición de la bola
@@ -12,8 +8,8 @@ class granada {
   float friccion = 0.95; // Coeficiente de fricción
   boolean enMovimiento; // Variable para controlar si la bola está en movimiento
   int tiempoAnterior = millis(); // Variable para almacenar el tiempo en que se lanzó la bola anteriormente
-  int tiempoEspera = int(random(1000, 5000)); // Tiempo de espera antes de lanzar la bola nuevamente
-  
+  int tiempoEspera = int(random(1000, 4000)); // Tiempo de espera antes de lanzar la bola nuevamente
+
   granada(int posx, float posinicialx) {
     this.posx = posx;
     this.posinicialx = posinicialx;
