@@ -1,28 +1,50 @@
 
-void aumentoVel(){
+void aumentoVel() {
   if (sw.getElapsedTime() >= lastTime + 15000 && !speedboolean) {
-    speed = speed + 2; 
-    lastTime = sw.getElapsedTime(); 
+    speed = speed + 2;
+    lastTime = sw.getElapsedTime();
     speedboolean = true;
     System.out.print(speed + " ");
-  }else if(sw.getElapsedTime() < lastTime + 15000){
+  } else if (sw.getElapsedTime() < lastTime + 15000) {
     speedboolean = false;
   }
 }
 
 void aTodaMadre() {
-  if (!izquierda && aTodaMadre == true && !invulnerable) {
-    image(atodamadre, xpos, ypos);
-    aTodaMadre = true;
-    xpos1 = xpos1 - speed2;
-    xpos = xpos + speed2;
-  } else {
-    aTodaMadre = false;
+  if (movimiento) {
+    if (millis() - tiempoInicio >= 1000) {
+      movimiento = false; // Detener el movimiento
+      aTodaMadre = false;
+    } else if (!izquierda && aTodaMadre == true && !invulnerable) {
+      switch(op) {
+      case 1:
+        image(atodamadre1, xpos, ypos-40);
+        break;
+      case 2:
+        image(atodamadre2, xpos, ypos-40);
+        break;
+      case 3:
+        image(atodamadre3, xpos, ypos-40);
+        break;
+      case 4:
+        image(atodamadre4, xpos, ypos-40);
+        break;
+      case 5:
+        image(atodamadre5, xpos, ypos-40);
+        break;
+      }
+      aTodaMadre = true;
+      xpos1 = xpos1 - speed2;
+      xpos = xpos + speed2;
+    } else {
+      aTodaMadre = false;
+    }
   }
 }
 
 void MoveHelicoptero1() {
   MoveHelicoptero(1700);
+  //MoveHelicoptero(2000);
 }
 
 void MoveHelicoptero(int posinicialx) {
