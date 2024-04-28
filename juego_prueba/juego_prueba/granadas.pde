@@ -1,6 +1,6 @@
 
 class granada {
-  float posinicialx;
+  float posinicialx, yinicial;
   float x1 = posinicialx, y1 = yinicial, posx; // Posición de la bola
   float vx, vy; // Velocidades en x e y
   float g = 0.5; // Gravedad
@@ -10,14 +10,16 @@ class granada {
   int tiempoAnterior = millis(); // Variable para almacenar el tiempo en que se lanzó la bola anteriormente
   int tiempoEspera = int(random(1000, 4000)); // Tiempo de espera antes de lanzar la bola nuevamente
 
-  granada(int posx, float posinicialx) {
+  granada(int posx, float posinicialx, float yinicial) {
     this.posx = posx;
     this.posinicialx = posinicialx;
+    this.yinicial = yinicial;
   }
-
+  
   void moveGranada() {
+    yinicial = yinicial + velheli;
     posx = xpos1 + x1;
-    image(granada, xpos1 + x1, y1, r*3, r*3);
+   image(granada, xpos1 + x1, y1, r*3, r*3);
     colisiongranada();
     if (enMovimiento) {
       x1 += vx;
@@ -43,6 +45,7 @@ class granada {
     }
     // Verifica si ha pasado el tiempo de espera y lanza la bola nuevamente
     if (!enMovimiento && millis() - tiempoAnterior >= tiempoEspera) {
+      
       lanzarBolita(posinicialx+200);
     }
   }
@@ -80,6 +83,18 @@ class granada {
           xpos = xpos + 150;
         }
         colision = colision - 1;
+        speed = 8;
+        if(op == 1){
+          music1.play(1, vol[1].volume);
+        }else if(op == 2){
+          music2.play(1, vol[1].volume);
+        }else if(op == 3){
+          music3.play(1, vol[1].volume);
+        }else if(op == 4){
+          music4.play(1, vol[1].volume);
+        }else if(op == 5){
+          music5.play(1, vol[1].volume);
+        }
         fill(255, 0, 0);
         textSize(20);
         textAlign(CENTER);
