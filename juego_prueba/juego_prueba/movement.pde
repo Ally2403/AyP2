@@ -1,7 +1,8 @@
 
 void aumentoVel() {
   if (sw.getElapsedTime() >= lastTime + 15000 && !speedboolean) {
-    speed = speed + 2;
+    speed = speed + 3;
+    speed2 = speed2 + 3;
     lastTime = sw.getElapsedTime();
     speedboolean = true;
     System.out.print(speed + " ");
@@ -42,20 +43,25 @@ void aTodaMadre() {
   }
 }
 
-void MoveHelicoptero1() {
-  MoveHelicoptero(1700);
-  //MoveHelicoptero(2000);
+class helicoptero {
+  int posinicialx, yinicial, alturamax;
+  helicoptero(int posinicialx, int yinicial, int alturamax) {
+    this.posinicialx = posinicialx;
+    this.yinicial = yinicial;
+    this.alturamax = alturamax;
+  }
+  void MoveHelicoptero() {
+    // Actualizar la posición vertical
+    yinicial = yinicial + velheli;
+    // Cambiar la dirección si alcanza los límites superior o inferior
+    if (yinicial > alturamax || yinicial < 0) {
+      velheli = -velheli;
+    }
+    image(helicoptero, xpos1 + posinicialx, yinicial);
+  }
 }
 
-void MoveHelicoptero(int posinicialx) {
-  // Actualizar la posición vertical
-  yinicial = yinicial + velheli;
-  // Cambiar la dirección si alcanza los límites superior o inferior
-  if (yinicial > alturamax || yinicial < 0) {
-    velheli = -velheli;
-  }
-  image(helicoptero, xpos1 + posinicialx, yinicial);
-}
+
 
 void movemapa() {
   if (derecha) {
@@ -64,6 +70,8 @@ void movemapa() {
   if (izquierda && xpos1 != 0) {
     xpos1 = xpos1 + speed;
   }
+  //hasta donde llegará el movimiento del mapa
+  xpos1 = constrain(xpos1, -22400, 0);
 }
 
 void movelatino() {
@@ -79,7 +87,11 @@ void movelatino() {
   }
 
   gravedad();
-  plataformas1();
+  
+  //dibujar plataformas
+  for (i=0; i<plat.length; i++) {
+    plat[i].plataformas1();
+  }
 
   xpos = constrain(xpos, 100, 700);
   ypos = constrain(ypos, 0, 900-400);
